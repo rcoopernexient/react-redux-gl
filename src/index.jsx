@@ -6,15 +6,30 @@ import { actionStorageMiddleware, createStorageListener } from 'redux-state-sync
 import PropTypes from 'prop-types'
 import persistState from 'redux-localstorage'
 import * as R from 'ramda'
-
 import GoldenLayout from 'golden-layout'
 
 window.ReactDOM = ReactDOM
 window.React= React
 
+const initialLayout = {
+  content: [{
+    type: 'row',
+    content:[{
+      type:'react-component',
+      component: 'dec-component',
+    }, {
+      type:'react-component',
+      component: 'counter-component',
+    }, {
+      type:'react-component',
+      component: 'inc-component',
+    }]
+  }]
+}
 
 const initialState = {
-  count: 0
+  count: 0,
+  layout: initialLayout
 }
 
 function reducers(state = initialState, action) {
@@ -29,7 +44,6 @@ function reducers(state = initialState, action) {
 }
 
 const enhancers = compose(applyMiddleware(actionStorageMiddleware), persistState())
-
 const store = createStore(
   reducers,
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
@@ -69,23 +83,9 @@ const Counter = connect(
 
 // GOLDEN LAYOUT STUFF
 
-class GlWrapper extends React.Component {
+class glWrapper extends React.Component {
   componentDidMount() {
-    const myLayout = new GoldenLayout({
-      content: [{
-        type: 'row',
-        content:[{
-          type:'react-component',
-          component: 'dec-component',
-        }, {
-          type:'react-component',
-          component: 'counter-component',
-        }, {
-          type:'react-component',
-          component: 'inc-component',
-        }]
-      }]
-    }, document.getElementById('GL'));
+    const myLayout = new GoldenLayout(this.props.layout, document.getElementById('GL'));
 
     function wrapComponent(Component, store) {
       class Wrapped extends React.Component {
@@ -107,14 +107,25 @@ class GlWrapper extends React.Component {
     myLayout.init()
   }
   render() {
-    return <div id="GL" style={{height:'500px',width:'500px'}}></div>
+    return <div id="GL" style={{height:'500px',width:'800px'}}></div>
   }
 }
-GlWrapper.contextTypes = {
+glWrapper.contextTypes = {
   store: PropTypes.object.isRequired
 };
 
+const GlWrapper = connect(
+  (state, ownProps) => ({layout: state.layout}),
+  () => ({})
+)(glWrapper)
 
-ReactDOM.render(<Provider store={store}><GlWrapper/></Provider>, document.getElementById('app'))
+function App() {
+  return (
+    <React.Fragment>
+      <GlWrapper/>
+    </React.Fragment>
+  )
+}
 
 
+ReactDOM.render(<Provider store={store}><App/></Provider>, document.getElementById('app'))
